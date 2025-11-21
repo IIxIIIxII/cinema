@@ -1,0 +1,8 @@
+Здравствуйте {{ ticket.buyer_name }},
+
+Во вложении ваш билет на сеанс:
+Фильм: {{ ticket.screening.movie.title }}
+Зал: {{ ticket.screening.hall.name }}
+Время: {{ ticket.screening.start_time|date:"Y-m-d H:i" }}
+
+Спасибо!

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ movie.title }}</h1>
+<p>{{ movie.description }}</p>
+
+<h2>Сеансы</h2>
+<ul>
+  {% for s in movie.screenings.all %}
+    <li>
+      {{ s.start_time }} — {{ s.hall.name }} — {{ s.price }}
+      <a href="{% url 'cinema:purchase' s.id %}">Купить</a>
+    </li>
+  {% empty %}
+    <li>Нет сеансов</li>
+  {% endfor %}
+</ul>
+{% endblock %}

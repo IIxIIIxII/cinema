@@ -1,0 +1,38 @@
+{% extends 'cinema/base.html' %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-md-4">
+        {% if movie.poster %}
+            <img src="{{ movie.poster.url }}" class="img-fluid rounded shadow" alt="{{ movie.title }}">
+        {% else %}
+            <div class="bg-secondary text-white p-5 rounded text-center">Нет постера</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-8">
+        <h1>{{ movie.title }}</h1>
+        <p class="lead">{{ movie.description }}</p>
+        <hr>
+        <p><strong>Длительность:</strong> {{ movie.duration_minutes }} мин.</p>
+
+        <h3 class="mt-4">Расписание сеансов</h3>
+        {% if screenings %}
+            <div class="list-group">
+                {% for session in screenings %}
+                    <a href="{% url 'booking' session.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ session.start_time|date:"d E (l)" }}</strong> в {{ session.start_time|time:"H:i" }}
+                            <br>
+                            <small class="text-muted">Зал: {{ session.hall.name }}</small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">{{ session.price }} ₸</span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-danger">На этот фильм пока нет сеансов.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

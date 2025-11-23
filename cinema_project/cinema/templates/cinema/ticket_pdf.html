@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 20mm;
+        }
+
+        body { 
+            font-family: sans-serif; /* Используем базовый шрифт */
+            font-size: 14px;
+        }
+        .header { 
+            font-size: 24px; 
+            font-weight: bold; 
+            color: #333; 
+            text-align: center;
+        }
+        .info { 
+            margin-top: 20px; 
+            font-size: 16px; 
+        }
+        .footer { 
+            margin-top: 50px; 
+            color: #777; 
+            font-size: 12px; 
+            text-align: center;
+        }
+        .box { 
+            border: 2px solid black; 
+            padding: 20px; 
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="header">CINEMA TICKET</div>
+        <hr>
+        <div class="info">
+            <p><strong>Movie:</strong> {{ ticket.screening.movie.title }}</p>
+            <p><strong>Hall:</strong> {{ ticket.screening.hall.name }}</p>
+            <p><strong>Date:</strong> {{ ticket.screening.start_time|date:"d.m.Y H:i" }}</p>
+            <br>
+            <p style="font-size: 20px;">
+                Row: <strong>{{ ticket.row }}</strong> &nbsp;&nbsp; Seat: <strong>{{ ticket.seat }}</strong>
+            </p>
+            <p>Price: {{ ticket.screening.price }} ₸</p>
+        </div>
+        <div class="footer">
+            Please show this ticket to the controller (mobile screen acceptable).
+            <br>Ticket ID: #{{ ticket.id }}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{% extends 'cinema/base.html' %}
+
+{% block content %}
+<div class="text-center">
+    <h2>Бронирование: {{ screening.movie.title }}</h2>
+    <p>{{ screening.start_time|date:"d E H:i" }} | Зал: {{ screening.hall.name }}</p>
+    <hr>
+    
+    <div class="bg-secondary text-white mb-4 p-2 mx-auto" style="width: 80%; border-radius: 0 0 50px 50px;">
+        ЭКРАН
+    </div>
+
+    <div class="d-inline-block bg-light p-4 rounded shadow">
+        {% for row in seat_matrix %}
+            <div class="d-flex justify-content-center mb-2">
+                <span class="me-2 mt-2 text-muted small">Ряд {{ forloop.counter }}</span>
+                
+                {% for seat in row %}
+                    {% if seat.is_taken %}
+                        <div class="btn btn-secondary disabled m-1" style="width: 40px; height: 40px;">
+                            <small>{{ seat.seat }}</small>
+                        </div>
+                    {% else %}
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="row" value="{{ seat.row }}">
+                            <input type="hidden" name="seat" value="{{ seat.seat }}">
+                            <button type="submit" class="btn btn-outline-success m-1" style="width: 40px; height: 40px;" title="Ряд {{ seat.row }}, Место {{ seat.seat }}">
+                                <small>{{ seat.seat }}</small>
+                            </button>
+                        </form>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-4">
+        <span class="badge bg-success">Свободно</span>
+        <span class="badge bg-secondary">Занято</span>
+    </div>
+</div>
+{% endblock %}

@@ -142,11 +142,11 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Настройки для отправки реальных писем через Mail.ru
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.mail.ru'
+EMAIL_HOST = 'smtp.bk.ru'
 EMAIL_PORT = 465               # Порт для безопасного соединения
 EMAIL_USE_SSL = True           # Использование SSL/TLS для порта 465
-EMAIL_HOST_USER = 'shutovich25@mail.ru'  # <-- ТВОЙ ПОЛНЫЙ АДРЕС MAIL.RU
-EMAIL_HOST_PASSWORD = 'MLTf1VvyecB0NabYWRt8' # <-- Тот самый код, который ты скопировал
+EMAIL_HOST_USER = 'talipova_kamilla@bk.ru'  # <-- ТВОЙ ПОЛНЫЙ АДРЕС MAIL.RU
+EMAIL_HOST_PASSWORD = 'HcAIBUpPZd9ocvLgMuWN' # <-- Тот самый код, который ты скопировал
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 

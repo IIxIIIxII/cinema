@@ -152,4 +152,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+LOGIN_REDIRECT_URL = 'movie_list' 
+LOGOUT_REDIRECT_URL = 'movie_list'
+
 DEBUG = True

@@ -1,0 +1,32 @@
+{% extends 'cinema/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger shadow-sm mt-5">
+            <div class="card-header bg-danger text-white">
+                ⚠️ Подтвердите удаление
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Вы уверены, что хотите удалить фильм?</h5>
+                
+                <p class="lead">
+                    **"{{ movie.title }}"**
+                </p>
+                
+                <p class="text-danger">
+                    **Внимание:** Это действие нельзя отменить! Будут удалены также все связанные сеансы и билеты на этот фильм.
+                </p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'movie_detail' movie.id %}" class="btn btn-secondary">Отмена</a>
+                        <button type="submit" class="btn btn-danger">Подтвердить удаление</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

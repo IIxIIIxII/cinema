@@ -1,7 +1,18 @@
 {% extends 'cinema/base.html' %}
 
 {% block content %}
-    <h1 class="mb-4">Афиша</h1>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        
+        <h1 class="mb-0">Афиша</h1>
+        
+        {% if user.is_superuser %}
+        <a href="{% url 'movie_create' %}" class="btn btn-warning">
+            ➕ Добавить новый фильм
+        </a>
+        {% endif %}
+    </div>
+
     <div class="row">
         {% for movie in movies %}
         <div class="col-md-4 mb-4">

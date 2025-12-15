@@ -2,12 +2,22 @@ from django.contrib.auth.forms import UserCreationForm
 from django.urls import reverse_lazy
 from django.views import generic
 from django.shortcuts import render, get_object_or_404
-from .models import Movie, Screening
+from django.http import HttpResponse # <-- Импорт для отдачи файла
+from django.template.loader import render_to_string # <-- Импорт для работы с шаблоном
+from xhtml2pdf import pisa # <-- Импорт для генерации PDF
+from io import BytesIO # <-- Импорт для работы с файлом в памяти
+
+from .models import Movie, Screening, Ticket 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.contrib import messages
-from .models import Ticket, Screening # убедись, что Screening и Ticket добавлены
-from .services import send_ticket_email
+# from .services import send_ticket_email # <-- УДАЛЕНО: Больше не нужен
+from django.views.generic.edit import UpdateView
+from django.contrib.auth.mixins import UserPassesTestMixin 
+from .forms import MovieForm, ScreeningForm 
+from django.views.generic.edit import CreateView, DeleteView
+import traceback # Можно удалить, так как почта убрана, но пусть будет для общ. отладки
+
 
 def movie_list(request):
     movies = Movie.objects.all()
@@ -28,7 +38,7 @@ def movie_detail(request, movie_id):
 # Класс для регистрации
 class SignUpView(generic.CreateView):
     form_class = UserCreationForm
-    success_url = reverse_lazy('login') # После регистрации перекинем на вход
+    success_url = reverse_lazy('login') 
     template_name = 'registration/signup.html'
 
 
@@ -41,7 +51,6 @@ def booking(request, screening_id):
     taken_seats = Ticket.objects.filter(screening=screening).values_list('row', 'seat')
 
     # Формируем матрицу зала для отрисовки
-    # Это будет список рядов, где каждый ряд - список мест
     seat_matrix = []
     for r in range(1, hall.rows + 1):
         row_seats = []
@@ -52,8 +61,13 @@ def booking(request, screening_id):
 
     if request.method == 'POST':
         # Получаем данные из формы (ряд и место)
-        row = int(request.POST.get('row'))
-        seat = int(request.POST.get('seat'))
+        try:
+            row = int(request.POST.get('row'))
+            seat = int(request.POST.get('seat'))
+        except (ValueError, TypeError):
+            messages.error(request, "Некорректный выбор места.")
+            return redirect('booking', screening_id=screening_id)
+
 
         # Двойная проверка: не заняли ли место, пока мы думали
         if Ticket.objects.filter(screening=screening, row=row, seat=seat).exists():
@@ -68,15 +82,9 @@ def booking(request, screening_id):
             seat=seat
         )
 
-        # Отправляем PDF на почту
-        try:
-            send_ticket_email(ticket)
-            messages.success(request, f"Билет куплен! Проверьте почту {request.user.email}")
-        except Exception as e:
-            messages.warning(request, "Билет куплен, но не удалось отправить письмо.")
-            print(e)
-
-        return redirect('movie_list') # Или на страницу "Мои билеты", которую сделаем позже
+        # УСПЕШНАЯ ПОКУПКА: Перенаправляем на скачивание
+        messages.success(request, "Билет успешно куплен!")
+        return redirect('download_ticket', ticket_id=ticket.id) 
 
     return render(request, 'cinema/booking.html', {
         'screening': screening,
@@ -93,7 +101,6 @@ def my_tickets(request):
 @login_required
 def cancel_ticket(request, ticket_id):
     # Ищем билет. Важно: ищем только среди билетов ЭТОГО пользователя (user=request.user)
-    # Это требование Безопасности: чтобы Петя не удалил билет Васи.
     ticket = get_object_or_404(Ticket, pk=ticket_id, user=request.user)
     
     # Удаляем
@@ -101,3 +108,106 @@ def cancel_ticket(request, ticket_id):
     messages.success(request, "Бронь успешно отменена.")
     
     return redirect('my_tickets')
+
+
+# --- CRUD Views for Admin ---
+
+class MovieUpdateView(UserPassesTestMixin, UpdateView):
+    model = Movie
+    form_class = MovieForm
+    template_name = 'cinema/movie_edit.html' 
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+        
+    def get_success_url(self):
+        return reverse_lazy('movie_detail', kwargs={'movie_id': self.object.pk})
+    
+
+class MovieCreateView(UserPassesTestMixin, CreateView):
+    model = Movie
+    form_class = MovieForm
+    template_name = 'cinema/movie_create.html' 
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+        
+    def get_success_url(self):
+        return reverse_lazy('movie_detail', kwargs={'movie_id': self.object.pk})
+    
+class ScreeningCreateView(UserPassesTestMixin, CreateView):
+    model = Screening
+    form_class = ScreeningForm
+    template_name = 'cinema/screening_create.html'
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+        
+    def get_initial(self):
+        initial = super().get_initial()
+        movie_id = self.kwargs.get('movie_id')
+        if movie_id:
+            try:
+                movie = Movie.objects.get(pk=movie_id)
+                initial['movie'] = movie
+            except Movie.DoesNotExist:
+                pass
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        movie_id = self.kwargs.get('movie_id')
+        if movie_id:
+             try:
+                context['movie'] = Movie.objects.get(pk=movie_id)
+             except Movie.DoesNotExist:
+                pass
+        return context
+
+    def get_success_url(self):
+        movie_id = self.object.movie.pk
+        return reverse_lazy('movie_detail', kwargs={'movie_id': movie_id})
+    
+class MovieDeleteView(UserPassesTestMixin, DeleteView):
+    model = Movie
+    template_name = 'cinema/movie_confirm_delete.html' 
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+        
+    def get_success_url(self):
+        return reverse_lazy('movie_list')
+    
+@login_required
+def download_ticket(request, ticket_id):
+    """
+    Генерирует PDF-файл билета и принудительно скачивает его.
+    """
+    # 1. Проверка безопасности: ищем билет только для текущего пользователя
+    ticket = get_object_or_404(Ticket, pk=ticket_id, user=request.user)
+    
+    # 2. Генерация HTML
+    context = {'ticket': ticket}
+    html_string = render_to_string('cinema/ticket_pdf.html', context)
+
+    # 3. Генерация PDF в память
+    result = BytesIO()
+    
+    # Генерация PDF
+    pdf = pisa.pisaDocument(
+        BytesIO(html_string.encode("UTF-8")), 
+        result
+    )
+
+    if pdf.err:
+        # Если генерация не удалась, выдаем ошибку пользователю
+        print(f"Ошибка генерации PDF: {pdf.err}")
+        messages.error(request, "Не удалось создать PDF-файл. Пожалуйста, попробуйте позже.")
+        return redirect('my_tickets')
+
+    # 4. Отправка файла пользователю
+    # Устанавливаем заголовки для скачивания
+    response = HttpResponse(result.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="ticket_{ticket.id}.pdf"'
+    
+    return response

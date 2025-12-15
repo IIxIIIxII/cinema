@@ -1,0 +1,30 @@
+{% extends 'cinema/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1 class="mb-4">
+            Добавление нового сеанса
+            {% if movie %}
+                для фильма: 
+                <a href="{% url 'movie_detail' movie.id %}">{{ movie.title }}</a>
+            {% else %}
+                (Выберите фильм)
+            {% endif %}
+        </h1>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="card p-4 shadow-sm">
+                {{ form.as_p }}
+                
+                <div class="d-flex justify-content-between mt-3">
+                    <a href="{% if movie %}{% url 'movie_detail' movie.id %}{% else %}{% url 'movie_list' %}{% endif %}" class="btn btn-secondary">Отмена</a>
+                    <button type="submit" class="btn btn-success">Создать сеанс</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
